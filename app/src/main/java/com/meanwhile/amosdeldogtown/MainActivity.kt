@@ -20,6 +20,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             AmosDelDogtownTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    // TODO Replace by a List of Pets
                     Text(
                         modifier = Modifier.padding(innerPadding),
                         text = "Welcome to ///",
@@ -29,6 +30,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {

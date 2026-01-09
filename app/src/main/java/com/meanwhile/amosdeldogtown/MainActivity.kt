@@ -5,11 +5,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -29,8 +31,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             AmosDelDogtownTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    val pets = mutableListOf<String>()
+                    for (i in 1..100) {
+                        pets.add("Pet clone $i")
+                    }
                     PetList(
-                        pets = listOf("Amos", "Rex", "Buddy", "Max", "Bella", "Flar", "Lar", "Cat"),
+                        pets = pets,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -41,8 +47,11 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun PetList(pets: List<String>, modifier: Modifier = Modifier) {
-    Column(modifier = modifier) {
-        pets.forEach { pet ->
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = modifier
+    ) {
+        items(pets) { pet ->
             PetItem(name = pet)
         }
     }

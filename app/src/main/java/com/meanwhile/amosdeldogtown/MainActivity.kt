@@ -17,26 +17,60 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.meanwhile.amosdeldogtown.data.PetApiService
 import com.meanwhile.amosdeldogtown.ui.theme.AmosDelDogtownTheme
 
 class MainActivity : ComponentActivity() {
+
+    /** Lazy: Calls the lambda the first time we access this val, the next times will reuse
+    * whatever was returned in the lambda
+    * Our lambda is creating a instance of PetApiService, which we'll use to call the API.
+    * Creating objects is always a "heavy" operations, so you only want to do it once and later reuse.
+    */
+    private val petApiService: PetApiService by lazy {
+        Injection.providePetApiService()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             AmosDelDogtownTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val pets = mutableListOf<String>()
-                    for (i in 1..100) {
-                        pets.add("Pet clone $i")
+
+                // Create an state to hold the list of pest
+                // Compose is clever and everytime this state changes, the composables that uses this state
+                // will be called again with the new parameters
+                val petsState = remember { mutableStateOf(listOf<String>()) }
+
+                // Launch Effect is is used to call coroutines (things that executed in a different thread)
+                // A coroutine is a method with the "suspend" keyword
+                LaunchedEffect(Unit) {
+                    // Execute the request call
+                    val petResponse = petApiService.getPets()
+
+                    // From the response, for now we only want the names of the pets
+                    val names = petResponse.result.map { pet ->
+                        pet.name
                     }
+
+                    // Store the new list of names in the state
+                    petsState.value = names
+                }
+
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+
+                    // By using the state, everytime the list change, PetList will be "recomposed" to display new content
                     PetList(
-                        pets = pets,
+                        pets = petsState.value,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

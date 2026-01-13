@@ -13,9 +13,11 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -23,8 +25,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.meanwhile.amosdeldogtown.data.Pet
 import com.meanwhile.amosdeldogtown.data.PetApiService
 import com.meanwhile.amosdeldogtown.ui.theme.AmosDelDogtownTheme
 
@@ -39,6 +44,7 @@ class MainActivity : ComponentActivity() {
         Injection.providePetApiService()
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -46,10 +52,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             AmosDelDogtownTheme {
 
-                // Create an state to hold the list of pest
+                // Create an state to hold the list of pets
                 // Compose is clever and everytime this state changes, the composables that uses this state
                 // will be called again with the new parameters
-                val petsState = remember { mutableStateOf(listOf<String>()) }
+                val petsState = remember { mutableStateOf(listOf<Pet>()) }
 
                 // Launch Effect is is used to call coroutines (things that executed in a different thread)
                 // A coroutine is a method with the "suspend" keyword
@@ -57,16 +63,20 @@ class MainActivity : ComponentActivity() {
                     // Execute the request call
                     val petResponse = petApiService.getPets()
 
-                    // From the response, for now we only want the names of the pets
-                    val names = petResponse.result.map { pet ->
-                        pet.name
-                    }
-
-                    // Store the new list of names in the state
-                    petsState.value = names
+                    // Store the new list of pets in the state
+                    petsState.value = petResponse.result
                 }
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    topBar = {
+                        TopAppBar(
+                            title = {
+                                Text(text = "Amos Del Dogtown")
+                            }
+                        )
+                    }
+                ) { innerPadding ->
 
                     // By using the state, everytime the list change, PetList will be "recomposed" to display new content
                     PetList(
@@ -80,20 +90,20 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun PetList(pets: List<String>, modifier: Modifier = Modifier) {
+fun PetList(pets: List<Pet>, modifier: Modifier = Modifier) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = modifier
     ) {
         items(pets) { pet ->
-            PetItem(name = pet)
+            PetItem(pet = pet)
         }
     }
 }
 
 @Composable
-fun PetItem(name: String, modifier: Modifier = Modifier) {
-    Surface( // Dines the surface, like color and rounded corners
+fun PetItem(pet: Pet, modifier: Modifier = Modifier) {
+    Surface( // Defines the surface, like color and rounded corners
         modifier = modifier
             .fillMaxWidth()
             .padding(8.dp),
@@ -102,11 +112,25 @@ fun PetItem(name: String, modifier: Modifier = Modifier) {
     ) {
         Box( // Defines how the content aligns inside
             modifier = Modifier
-                .size(150.dp)
-                .padding(24.dp),
+                .size(150.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = name)
+            AsyncImage(
+                model = "https://" + pet.imageUrl, // FIXME this is pretty hacky, but will work for this tutorial
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            Surface(
+                color = Color.Black.copy(alpha = 0.5f),
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+            ) {
+                Text(
+                    text = pet.name,
+                    color = Color.White,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
         }
     }
 }
@@ -115,6 +139,9 @@ fun PetItem(name: String, modifier: Modifier = Modifier) {
 @Composable
 fun PetListPreview() {
     AmosDelDogtownTheme {
-        PetList(pets = listOf("Amos", "Rex", "Buddy"))
+        PetList(pets = listOf(
+            Pet("1", "Amos", "Description", "https://example.com/image.jpg"),
+            Pet("2", "Rex", "Description", "https://example.com/image.jpg")
+        ))
     }
 }

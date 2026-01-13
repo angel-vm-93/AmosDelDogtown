@@ -25,6 +25,10 @@ class MainViewModel(
         fetchPets()
     }
 
+    public fun onRefresh() {
+        fetchPets()
+    }
+
     private fun fetchPets() {
         viewModelScope.launch {
             // post the UI that we are loading

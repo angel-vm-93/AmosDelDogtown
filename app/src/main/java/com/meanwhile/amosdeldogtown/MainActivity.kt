@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.meanwhile.amosdeldogtown
 
 import android.os.Bundle
@@ -5,7 +7,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,16 +24,19 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.meanwhile.amosdeldogtown.data.Pet
+import com.meanwhile.amosdeldogtown.ui.MainUiState
 import com.meanwhile.amosdeldogtown.ui.MainViewModel
 import com.meanwhile.amosdeldogtown.ui.theme.AmosDelDogtownTheme
 
@@ -57,10 +65,12 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 ) { innerPadding ->
-                    // By using the state, everytime the list change, PetList will be "recomposed" to display new content
-                    PetList(
-                        pets = uiState.value.pets,
-                        modifier = Modifier.padding(innerPadding)
+                    MainContent(
+                        modifier = Modifier.padding(innerPadding),
+                        uiState = uiState.value,
+                        onRefresh = {
+                            viewModel.onRefresh()
+                        },
                     )
                 }
             }
@@ -69,10 +79,39 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun PetList(pets: List<Pet>, modifier: Modifier = Modifier) {
+private fun MainContent(
+    modifier: Modifier = Modifier,
+    uiState: MainUiState,
+    onRefresh: () -> Unit,
+) {
+    Column(modifier = modifier.fillMaxSize()) {
+        AnimatedVisibility(uiState.error != null) {
+            Text(
+                modifier = Modifier
+                    .background(color = Color.Red)
+                    .padding(32.dp),
+                text = stringResource(R.string.error_message, uiState.error.orEmpty()),
+                color = Color.White,
+            )
+        }
+
+        PullToRefreshBox(
+            isRefreshing = uiState.isLoading,
+            onRefresh = onRefresh,
+            modifier = Modifier,
+        ) {
+            PetList(
+                pets = uiState.pets,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PetList(pets: List<Pet>, modifier: Modifier = Modifier) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
-        modifier = modifier
+        modifier = modifier.fillMaxSize()
     ) {
         items(pets) { pet ->
             PetItem(pet = pet)
@@ -81,7 +120,7 @@ fun PetList(pets: List<Pet>, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun PetItem(pet: Pet, modifier: Modifier = Modifier) {
+private fun PetItem(pet: Pet, modifier: Modifier = Modifier) {
     Surface( // Defines the surface, like color and rounded corners
         modifier = modifier
             .fillMaxWidth()
@@ -102,7 +141,9 @@ fun PetItem(pet: Pet, modifier: Modifier = Modifier) {
             )
             Surface(
                 color = Color.Black.copy(alpha = 0.5f),
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
             ) {
                 Text(
                     text = pet.name,
@@ -116,11 +157,13 @@ fun PetItem(pet: Pet, modifier: Modifier = Modifier) {
 
 @Preview(showBackground = true)
 @Composable
-fun PetListPreview() {
+private fun PetListPreview() {
     AmosDelDogtownTheme {
-        PetList(pets = listOf(
-            Pet("1", "Amos", "Description", "https://example.com/image.jpg"),
-            Pet("2", "Rex", "Description", "https://example.com/image.jpg")
-        ))
+        PetList(
+            pets = listOf(
+                Pet("1", "Amos", "Description", "https://example.com/image.jpg"),
+                Pet("2", "Rex", "Description", "https://example.com/image.jpg")
+            )
+        )
     }
 }

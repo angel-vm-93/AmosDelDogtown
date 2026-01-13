@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">AmosDelDogtown</string>
+    <string name="error_message">Oh no! There was an error: %s</string>
 </resources>

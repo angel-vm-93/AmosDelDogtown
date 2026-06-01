@@ -3,10 +3,13 @@ package com.meanwhile.amosdeldogtown.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -21,7 +24,9 @@ import com.meanwhile.amosdeldogtown.ui.theme.AmosDelDogtownTheme
 @Composable
 fun DetailView(
     pet: Pet,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    isFavorite: Boolean,
+    onFavoriteClick: (String) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -30,6 +35,15 @@ fun DetailView(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { onFavoriteClick(pet.id) }) {
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                            contentDescription = "Favorito",
+                            tint = if (isFavorite) Color.Red else MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 }
             )
@@ -108,7 +122,7 @@ private fun DetailViewPreview() {
     AmosDelDogtownTheme {
         DetailView(
             pet = Pet(
-                id = 1,
+                id = "1",
                 name = "CHIPIRON",
                 race = "MESTIZO",
                 sex = "Macho",
@@ -121,7 +135,9 @@ private fun DetailViewPreview() {
                 description = "Perro muy tranquilo y amigable de tamaño mediano. Ven a conocerlo.",
                 imageUrl = null
             ),
-            onBack = {}
+            onBack = {},
+            isFavorite = false,
+            onFavoriteClick = {}
         )
     }
 }

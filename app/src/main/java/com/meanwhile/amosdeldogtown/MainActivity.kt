@@ -20,7 +20,12 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -66,26 +71,40 @@ class MainActivity : ComponentActivity() {
                         Scaffold(
                             modifier = Modifier.fillMaxSize(),
                             topBar = {
-                                TopAppBar(title = { Text("Amos Del Dogtown") })
+                                TopAppBar(
+                                    title = { Text("Amos Del Dogtown") },
+                                    actions = {
+                                        IconButton(onClick = { viewModel.toggleFilter() }) {
+                                            Icon(
+                                                imageVector = if (uiState.value.showOnlyFavorites)
+                                                    Icons.Filled.Favorite
+                                                else
+                                                    Icons.Outlined.FavoriteBorder,
+                                                contentDescription = "Filtrar favoritos"
+                                            )
+                                        }
+                                    }
+                                )
                             }
                         ) { innerPadding ->
                             MainContent(
                                 modifier = Modifier.padding(innerPadding),
                                 uiState = uiState.value,
                                 onRefresh = { viewModel.onRefresh() },
-                                onPetClick = { pet ->
-                                    navController.navigate("detail/${pet.id}")
-                                }
+                                onPetClick = { pet -> navController.navigate("detail/${pet.id}") },
+                                onFavoriteClick = { petId -> viewModel.toggleFavorite(petId) }
                             )
                         }
                     }
                     composable("detail/{petId}") { backStackEntry ->
                         val petId = backStackEntry.arguments?.getString("petId")
-                        val pet = uiState.value.pets.find { it.id == petId?.toIntOrNull() }
+                        val pet = uiState.value.pets.find { it.id == petId }
                         if (pet != null) {
                             DetailView(
                                 pet = pet,
-                                onBack = { navController.popBackStack() }
+                                onBack = { navController.popBackStack() },
+                                isFavorite = pet.id in uiState.value.favoriteIds,
+                                onFavoriteClick = { petId -> viewModel.toggleFavorite(petId) }
                             )
                         }
                     }
@@ -101,6 +120,7 @@ private fun MainContent(
     uiState: MainUiState,
     onRefresh: () -> Unit,
     onPetClick: (Pet) -> Unit,
+    onFavoriteClick: (String) -> Unit,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         AnimatedVisibility(uiState.error != null) {
@@ -119,27 +139,48 @@ private fun MainContent(
             modifier = Modifier,
         ) {
             PetList(
-                pets = uiState.pets,
+                pets = if (uiState.showOnlyFavorites) {
+                    uiState.pets.filter { it.id in uiState.favoriteIds }
+                } else {
+                    uiState.pets
+                },
                 onPetClick = onPetClick,
+                onFavoriteClick = onFavoriteClick,
+                favoriteIds = uiState.favoriteIds,
             )
         }
     }
 }
 
 @Composable
-private fun PetList(pets: List<Pet>, onPetClick: (Pet) -> Unit, modifier: Modifier = Modifier) {
+private fun PetList(pets: List<Pet>,
+                    onPetClick: (Pet) -> Unit,
+                    onFavoriteClick: (String) -> Unit,
+                    favoriteIds: Set<String>,
+                    modifier: Modifier = Modifier) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = modifier.fillMaxSize()
     ) {
         items(pets) { pet ->
-            PetItem(pet = pet, onPetClick = onPetClick)
+            PetItem(
+                pet = pet,
+                onPetClick = onPetClick,
+                onFavoriteClick = onFavoriteClick,
+                isFavorite = pet.id in favoriteIds
+            )
         }
     }
 }
 
 @Composable
-private fun PetItem(pet: Pet, onPetClick: (Pet) -> Unit, modifier: Modifier = Modifier) {
+private fun PetItem(
+    pet: Pet,
+    onPetClick: (Pet) -> Unit,
+    onFavoriteClick: (String) -> Unit,
+    isFavorite: Boolean,
+    modifier: Modifier = Modifier
+) {
     Surface( // Defines the surface, like color and rounded corners
         modifier = modifier
             .fillMaxWidth()
@@ -159,6 +200,16 @@ private fun PetItem(pet: Pet, onPetClick: (Pet) -> Unit, modifier: Modifier = Mo
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
+            IconButton(
+                onClick = { onFavoriteClick(pet.id) },
+                modifier = Modifier.align(Alignment.TopEnd)
+            ) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    contentDescription = "Favorito",
+                    tint = if (isFavorite) Color.Red else Color.White
+                )
+            }
             Surface(
                 color = Color.Black.copy(alpha = 0.5f),
                 modifier = Modifier
@@ -181,10 +232,12 @@ private fun PetListPreview() {
     AmosDelDogtownTheme {
         PetList(
             pets = listOf(
-                Pet(1, "Amos", null, null, null, null, false, false, null, null, "Description", "https://example.com/image.jpg"),
-                Pet(2, "Rex", null, null, null, null, false, false, null, null, "Description", "https://example.com/image.jpg")
+                Pet("1", "Amos", null, null, null, null, false, false, null, null, "Description", "https://example.com/image.jpg"),
+                Pet("2", "Rex", null, null, null, null, false, false, null, null, "Description", "https://example.com/image.jpg")
             ),
-            onPetClick = {}
+            onPetClick = {},
+            onFavoriteClick = {},
+            favoriteIds = emptySet()
         )
     }
 }

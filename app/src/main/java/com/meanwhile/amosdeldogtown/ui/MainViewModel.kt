@@ -1,17 +1,20 @@
 package com.meanwhile.amosdeldogtown.ui
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.meanwhile.amosdeldogtown.data.PetRepository
+import com.meanwhile.amosdeldogtown.data.FavoritesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 
-class MainViewModel(
-    private val petRepository: PetRepository = PetRepository()
-) : ViewModel() {
+class MainViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val petRepository = PetRepository()
+    private val favoritesRepository = FavoritesRepository(application)
 
     // This mutable flow will allow us to post UiState to the ui
     private val _uiState = MutableStateFlow(MainUiState())
@@ -29,6 +32,19 @@ class MainViewModel(
         fetchPets()
     }
 
+    fun toggleFavorite(petId: String) {
+        favoritesRepository.toggleFavorite(petId)
+        _uiState.value = _uiState.value.copy(
+            favoriteIds = favoritesRepository.getFavorites()
+        )
+    }
+
+    fun toggleFilter() {
+        _uiState.value = _uiState.value.copy(
+            showOnlyFavorites = !_uiState.value.showOnlyFavorites
+        )
+    }
+
     private fun fetchPets() {
         viewModelScope.launch {
             // post the UI that we are loading
@@ -40,7 +56,8 @@ class MainViewModel(
                 // Post to the Ui our results
                 _uiState.value = _uiState.value.copy(
                     pets = response,
-                    isLoading = false
+                    isLoading = false,
+                    favoriteIds = favoritesRepository.getFavorites()
                 )
             } catch (e: Exception) {
                 // post to the ui the error

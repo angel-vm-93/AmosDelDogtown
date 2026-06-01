@@ -7,7 +7,7 @@ data class PetResponse(
 )
 
 data class Pet(
-    val id: Int,
+    val id: String,
     @SerializedName("nombre") val name: String,
     @SerializedName("raza") val race: String?,
     @SerializedName("sexo") val sex: String?,

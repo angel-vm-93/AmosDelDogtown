@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,8 +35,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.meanwhile.amosdeldogtown.data.Pet
+import com.meanwhile.amosdeldogtown.ui.DetailView
 import com.meanwhile.amosdeldogtown.ui.MainUiState
 import com.meanwhile.amosdeldogtown.ui.MainViewModel
 import com.meanwhile.amosdeldogtown.ui.theme.AmosDelDogtownTheme
@@ -54,24 +59,36 @@ class MainActivity : ComponentActivity() {
 
                 // State is only exposed by the ViewModel
                 val uiState = viewModel.uiState.collectAsState()
+                val navController = rememberNavController()
 
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    topBar = {
-                        TopAppBar(
-                            title = {
-                                Text(text = "Amos Del Dogtown")
+                NavHost(navController = navController, startDestination = "list") {
+                    composable("list") {
+                        Scaffold(
+                            modifier = Modifier.fillMaxSize(),
+                            topBar = {
+                                TopAppBar(title = { Text("Amos Del Dogtown") })
                             }
-                        )
+                        ) { innerPadding ->
+                            MainContent(
+                                modifier = Modifier.padding(innerPadding),
+                                uiState = uiState.value,
+                                onRefresh = { viewModel.onRefresh() },
+                                onPetClick = { pet ->
+                                    navController.navigate("detail/${pet.id}")
+                                }
+                            )
+                        }
                     }
-                ) { innerPadding ->
-                    MainContent(
-                        modifier = Modifier.padding(innerPadding),
-                        uiState = uiState.value,
-                        onRefresh = {
-                            viewModel.onRefresh()
-                        },
-                    )
+                    composable("detail/{petId}") { backStackEntry ->
+                        val petId = backStackEntry.arguments?.getString("petId")
+                        val pet = uiState.value.pets.find { it.id == petId?.toIntOrNull() }
+                        if (pet != null) {
+                            DetailView(
+                                pet = pet,
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -83,6 +100,7 @@ private fun MainContent(
     modifier: Modifier = Modifier,
     uiState: MainUiState,
     onRefresh: () -> Unit,
+    onPetClick: (Pet) -> Unit,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         AnimatedVisibility(uiState.error != null) {
@@ -102,29 +120,31 @@ private fun MainContent(
         ) {
             PetList(
                 pets = uiState.pets,
+                onPetClick = onPetClick,
             )
         }
     }
 }
 
 @Composable
-private fun PetList(pets: List<Pet>, modifier: Modifier = Modifier) {
+private fun PetList(pets: List<Pet>, onPetClick: (Pet) -> Unit, modifier: Modifier = Modifier) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = modifier.fillMaxSize()
     ) {
         items(pets) { pet ->
-            PetItem(pet = pet)
+            PetItem(pet = pet, onPetClick = onPetClick)
         }
     }
 }
 
 @Composable
-private fun PetItem(pet: Pet, modifier: Modifier = Modifier) {
+private fun PetItem(pet: Pet, onPetClick: (Pet) -> Unit, modifier: Modifier = Modifier) {
     Surface( // Defines the surface, like color and rounded corners
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.dp)
+            .clickable { onPetClick(pet) },
         color = Color.LightGray,
         shape = RoundedCornerShape(8.dp)
     ) {
@@ -161,9 +181,10 @@ private fun PetListPreview() {
     AmosDelDogtownTheme {
         PetList(
             pets = listOf(
-                Pet("1", "Amos", "Description", "https://example.com/image.jpg"),
-                Pet("2", "Rex", "Description", "https://example.com/image.jpg")
-            )
+                Pet(1, "Amos", null, null, null, null, false, false, null, null, "Description", "https://example.com/image.jpg"),
+                Pet(2, "Rex", null, null, null, null, false, false, null, null, "Description", "https://example.com/image.jpg")
+            ),
+            onPetClick = {}
         )
     }
 }

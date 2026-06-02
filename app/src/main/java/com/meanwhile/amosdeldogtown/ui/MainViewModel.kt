@@ -28,7 +28,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         fetchPets()
     }
 
-    public fun onRefresh() {
+    fun onRefresh() {
         fetchPets()
     }
 

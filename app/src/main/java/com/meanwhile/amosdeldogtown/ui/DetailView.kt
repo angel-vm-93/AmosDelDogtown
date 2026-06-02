@@ -1,5 +1,6 @@
 package com.meanwhile.amosdeldogtown.ui
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,11 +14,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.meanwhile.amosdeldogtown.data.Pet
-import androidx.compose.ui.tooling.preview.Preview
 import com.meanwhile.amosdeldogtown.ui.theme.AmosDelDogtownTheme
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,7 +57,7 @@ fun DetailView(
             .verticalScroll(rememberScrollState())
         ) {
             AsyncImage(
-                model = "https://" + pet.imageUrl,
+                model = pet.fullImageUrl,
                 contentDescription = pet.name,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -64,14 +67,21 @@ fun DetailView(
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(text = pet.name, style = MaterialTheme.typography.headlineMedium)
                 Spacer(modifier = Modifier.height(8.dp))
-
+                if (pet.dangerousDog) {
+                    Text(
+                        text = "Se requiere licencia PPP",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 PetField("Raza", pet.race)
                 PetField("Sexo", pet.sex)
                 PetField("Fecha de nacimiento", formatDate(pet.birthday))
                 PetField("Tamaño", pet.size)
                 PetField("Carácter", pet.nature)
                 PetField("Fecha de ingreso", formatDate(pet.entryDate))
-                PetField("Peligroso", booleanToYesNo(pet.dangerousDog))
                 PetField("Esterilizado", booleanToYesNo(pet.sterilized))
 
                 pet.description?.takeIf { it.isNotBlank() }?.let { desc ->
@@ -107,9 +117,10 @@ private fun PetField(label: String, value: String?) {
 private fun formatDate(dateString: String?): String? {
     if (dateString.isNullOrBlank()) return null
     return try {
-        val parts = dateString.substring(0, 10).split("-")
-        "${parts[2]}/${parts[1]}/${parts[0]}"
+        val date = LocalDateTime.parse(dateString)
+        date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
     } catch (e: Exception) {
+        Log.e("DetailView", "Formato de fecha inválido: $dateString", e)
         null
     }
 }

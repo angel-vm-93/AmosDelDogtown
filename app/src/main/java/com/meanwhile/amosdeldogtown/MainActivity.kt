@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -23,12 +24,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -74,14 +77,17 @@ class MainActivity : ComponentActivity() {
                                 TopAppBar(
                                     title = { Text("Amos Del Dogtown") },
                                     actions = {
-                                        IconButton(onClick = { viewModel.toggleFilter() }) {
-                                            Icon(
-                                                imageVector = if (uiState.value.showOnlyFavorites)
-                                                    Icons.Filled.Favorite
-                                                else
-                                                    Icons.Outlined.FavoriteBorder,
-                                                contentDescription = "Filtrar favoritos"
-                                            )
+                                        TextButton(
+                                            onClick = { viewModel.toggleFilter() },
+                                            colors = ButtonDefaults.textButtonColors(
+                                                contentColor = if (uiState.value.showOnlyFavorites) Color.Blue else
+                                                    Color.Gray
+                                            ),
+                                            border = BorderStroke(1.dp, if (uiState.value.showOnlyFavorites)
+                                                Color.Blue else Color.Gray),
+                                            shape = RoundedCornerShape(50)
+                                        ) {
+                                            Text("Mis Favoritos")
                                         }
                                     }
                                 )
@@ -195,7 +201,7 @@ private fun PetItem(
             contentAlignment = Alignment.Center
         ) {
             AsyncImage(
-                model = "https://" + pet.imageUrl, // FIXME this is pretty hacky, but will work for this tutorial
+                model = pet.fullImageUrl,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop

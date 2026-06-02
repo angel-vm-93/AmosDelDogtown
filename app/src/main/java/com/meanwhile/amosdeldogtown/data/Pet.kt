@@ -19,4 +19,6 @@ data class Pet(
     @SerializedName("fechaIngreso") val entryDate: String?,
     @SerializedName("observaciones") val description: String?,
     @SerializedName("foto") val imageUrl: String?
-)
+){
+    val fullImageUrl: String? get() = imageUrl?.let { "https://$it" }
+}
